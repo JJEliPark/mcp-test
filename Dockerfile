@@ -19,6 +19,5 @@ COPY search_mcp.py .
 # 포트 8000번 노출
 EXPOSE 8000
 
-# Gunicorn을 사용하여 FastAPI 서버를 실행합니다.
-# 워커를 1개로 제한하여 세션 상태 불일치(400 Bad Request) 문제를 방지합니다.
-CMD gunicorn -w 1 -k uvicorn.workers.UvicornWorker search_mcp:app --bind 0.0.0.0:$PORT
+# FastMCP가 내장 uvicorn 서버를 사용하므로 직접 Python으로 실행합니다.
+CMD python search_mcp.py

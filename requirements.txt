@@ -1,5 +1,2 @@
-mcp
-fastapi
-uvicorn
-gunicorn
+fastmcp
 duckduckgo-search
