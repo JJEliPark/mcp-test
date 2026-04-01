@@ -20,5 +20,5 @@ COPY search_mcp.py .
 EXPOSE 8000
 
 # Gunicorn을 사용하여 FastAPI 서버를 실행합니다.
-# Render의 $PORT 환경변수를 사용하도록 바인딩합니다.
-CMD gunicorn -w 4 -k uvicorn.workers.UvicornWorker search_mcp:app --bind 0.0.0.0:$PORT
+# 워커를 1개로 제한하여 세션 상태 불일치(400 Bad Request) 문제를 방지합니다.
+CMD gunicorn -w 1 -k uvicorn.workers.UvicornWorker search_mcp:app --bind 0.0.0.0:$PORT
