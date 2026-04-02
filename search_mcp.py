@@ -1,6 +1,11 @@
 import os
+import logging
 from fastmcp import FastMCP
 from duckduckgo_search import DDGS
+
+# 로깅 설정
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("internet-search-mcp")
 
 # FastMCP 서버 초기화
 mcp = FastMCP(name="internet-search")
@@ -18,11 +23,13 @@ def search_internet(query: str, max_results: int = 5) -> str:
     Returns:
         검색 결과 (제목, 요약, URL 포함)
     """
+    logger.info(f"Searching for: {query} (max_results={max_results})")
     try:
         with DDGS() as ddgs:
             results = list(ddgs.text(query, max_results=max_results))
 
             if not results:
+                logger.warning(f"No results found for query: {query}")
                 return "검색 결과가 없습니다."
 
             # 검색 결과를 Markdown 포맷으로 구성
@@ -35,15 +42,18 @@ def search_internet(query: str, max_results: int = 5) -> str:
                 formatted_text += f"{body}\n"
                 formatted_text += f"**URL**: {href}\n\n"
 
+            logger.info(f"Successfully retrieved {len(results)} results.")
             return formatted_text
 
     except Exception as e:
+        logger.error(f"Search failed: {str(e)}", exc_info=True)
         return f"검색 중 오류 발생: {str(e)}"
 
 
 if __name__ == "__main__":
     # Render 등 클라우드 환경에서는 'PORT' 환경 변수를 사용합니다.
     port = int(os.environ.get("PORT", 8000))
+    logger.info(f"Starting MCP server on port {port}...")
     mcp.run(
         transport="streamable-http",
         path="/mcp",          # /mcp 엔드포인트로 접근
