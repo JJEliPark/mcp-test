@@ -2,7 +2,7 @@ import os
 import logging
 import uvicorn
 from fastmcp import FastMCP
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
