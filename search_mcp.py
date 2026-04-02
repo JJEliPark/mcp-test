@@ -3,6 +3,7 @@ import logging
 import uvicorn
 from fastmcp import FastMCP
 from ddgs import DDGS
+from contextlib import asynccontextmanager
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -61,16 +62,30 @@ async def health_check(request: Request) -> JSONResponse:
 
 
 def create_app() -> Starlette:
-    """Starlette 앱에 헬스체크 + FastMCP를 마운트하여 반환"""
-    mcp_asgi = mcp.http_app(path="/")
+    """Starlette 앱에 헬스체크 + FastMCP(streamable-http + SSE)를 마운트하여 반환"""
+    # streamable-http 트랜스포트 (/mcp/)
+    mcp_http_asgi = mcp.http_app(path="/")
+
+    # SSE 트랜스포트 (/sse, /messages/)
+    mcp_sse_asgi = mcp.sse_app()
+
+    @asynccontextmanager
+    async def combined_lifespan(app):
+        """두 트랜스포트의 lifecycle을 함께 관리"""
+        async with mcp_http_asgi.router.lifespan_context(app):
+            async with mcp_sse_asgi.router.lifespan_context(app):
+                yield
 
     app = Starlette(
         routes=[
             Route("/health", health_check, methods=["GET", "HEAD"]),
             Route("/", health_check, methods=["GET", "HEAD"]),
-            Mount("/mcp", app=mcp_asgi),
+            # streamable-http: /mcp/
+            Mount("/mcp", app=mcp_http_asgi),
+            # SSE: /sse (GET), /messages/ (POST)
+            *mcp_sse_asgi.routes,
         ],
-        lifespan=mcp_asgi.router.lifespan_context,
+        lifespan=combined_lifespan,
     )
     return app
 
