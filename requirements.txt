@@ -1,2 +1,4 @@
 fastmcp
 duckduckgo-search>=6.0.0
+starlette
+uvicorn

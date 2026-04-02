@@ -1,7 +1,12 @@
 import os
 import logging
+import uvicorn
 from fastmcp import FastMCP
 from duckduckgo_search import DDGS
+from starlette.applications import Starlette
+from starlette.requests import Request
+from starlette.responses import JSONResponse
+from starlette.routing import Route, Mount
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO)
@@ -50,13 +55,29 @@ def search_internet(query: str, max_results: int = 5) -> str:
         return f"검색 중 오류 발생: {str(e)}"
 
 
+async def health_check(request: Request) -> JSONResponse:
+    """Render 헬스체크용 엔드포인트 (HEAD/GET 모두 허용)"""
+    return JSONResponse({"status": "ok"})
+
+
+def create_app() -> Starlette:
+    """Starlette 앱에 헬스체크 + FastMCP를 마운트하여 반환"""
+    mcp_asgi = mcp.http_app(path="/")
+
+    app = Starlette(
+        routes=[
+            Route("/health", health_check, methods=["GET", "HEAD"]),
+            Route("/", health_check, methods=["GET", "HEAD"]),
+            Mount("/mcp", app=mcp_asgi),
+        ],
+        lifespan=mcp_asgi.router.lifespan_context,
+    )
+    return app
+
+
 if __name__ == "__main__":
-    # Render 등 클라우드 환경에서는 'PORT' 환경 변수를 사용합니다.
     port = int(os.environ.get("PORT", 8000))
     logger.info(f"Starting MCP server on port {port}...")
-    mcp.run(
-        transport="streamable-http",
-        path="/",
-        host="0.0.0.0",
-        port=port,
-    )
+    app = create_app()
+    uvicorn.run(app, host="0.0.0.0", port=port)
+

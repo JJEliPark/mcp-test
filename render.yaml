@@ -1,9 +1,12 @@
 services:
   - type: web
     name: internet-search-mcp
-    runtime: docker
-    plan: free # 무료 플랜 사용 (원하는 경우 수정 가능)
-    region: singapore # 한국에서 가까운 리전 권장
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: python search_mcp.py
+    healthCheckPath: /health
     envVars:
       - key: PORT
         value: 8000
