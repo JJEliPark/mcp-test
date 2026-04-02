@@ -56,6 +56,7 @@ if __name__ == "__main__":
     logger.info(f"Starting MCP server on port {port}...")
     mcp.run(
         transport="streamable-http",
+        path="/",
         host="0.0.0.0",
         port=port,
     )
